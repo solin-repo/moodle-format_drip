@@ -32,22 +32,7 @@
  * @return bool result
  */
 function xmldb_format_drip_upgrade($oldversion) {
-    global $DB;
-
-    // Ensure this block is only run if the version is less than 2024081404.
-    if ($oldversion < 2024081404) {
-        // Path to the install.xml file.
-        $file = __DIR__ . '/install.xml';
-
-        // Table name to create.
-        $tablename = 'format_drip_email_log';
-
-        // Create the new table using the install_one_table_from_xmldb_file function.
-        $DB->get_manager()->install_one_table_from_xmldb_file($file, $tablename);
-
-        // Mark the new version as the current savepoint.
-        upgrade_plugin_savepoint(true, 2024081404, 'format', 'drip');
-    }
+    global $CFG, $DB;
 
     return true;
 }

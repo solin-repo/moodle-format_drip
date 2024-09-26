@@ -31,10 +31,10 @@ require_once($CFG->libdir.'/filelib.php');
 require_once($CFG->libdir.'/completionlib.php');
 
 // Horrible backwards compatible parameter aliasing.
-if ($drip = optional_param('drip', 0, PARAM_INT)) {
+if ($driptopic = optional_param('driptopic', 0, PARAM_INT)) {
     $url = $PAGE->url;
-    $url->param('section', $drip);
-    debugging('Outdated drip param passed to course/view.php', DEBUG_DEVELOPER);
+    $url->param('section', $driptopic);
+    debugging('Outdated driptopic param passed to course/view.php', DEBUG_DEVELOPER);
     redirect($url);
 }
 // End backwards-compatible aliasing.
@@ -54,9 +54,12 @@ course_create_sections_if_missing($course, 0);
 
 $renderer = $PAGE->get_renderer('format_drip');
 
-if (!is_null($displaysection)) {
-    $format->set_sectionnum($displaysection);
+if (!empty($displaysection)) {
+    $format->set_section_number($displaysection);
 }
 $outputclass = $format->get_output_classname('content');
 $widget = new $outputclass($format);
 echo $renderer->render($widget);
+
+// Include course format js module.
+$PAGE->requires->js('/course/format/drip/format.js');

@@ -27,7 +27,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2024090304;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2024042201;        // Requires this Moodle version.
+$plugin->version   = 2023100910;  // The current plugin version (Date: YYYYMMDDXX).
+$plugin->requires  = 2023042408;        // Requires this Moodle version.
 $plugin->component = 'format_drip';    // Full name of the plugin (used for diagnostics).
-$plugin->name      = 'Drip Format by Solin';

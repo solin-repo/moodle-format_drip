@@ -10,8 +10,20 @@ div.course-content ul.drip li.section.hidden h3.sectionname span a {
     color: #CCC;
 }
 
+
+/*
+div.course-content ul.drip li.section h3 {
+    color:red;
+}
+    */
+
 .course-content ul.drip {
     padding: 0;
     margin: 0;
     list-style: none;
+}
+
+.course-content ul.drip li.section {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }

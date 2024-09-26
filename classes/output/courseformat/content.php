@@ -29,7 +29,6 @@ namespace format_drip\output\courseformat;
 
 use core_courseformat\output\local\content as content_base;
 use course_modinfo;
-use renderer_base;
 
 /**
  * Base class to render a course content.
@@ -48,16 +47,47 @@ class content extends content_base {
     protected $hasaddsection = false;
 
     /**
-     * Export this data so it can be used as the context for a mustache template (core/inplace_editable).
+     * Return an array of sections to display.
      *
-     * @param renderer_base $output typically, the renderer that's calling this function
-     * @return stdClass data context for a mustache template
+     * This method is used to differentiate between display a specific section
+     * or a list of them.
+     *
+     * @param course_modinfo $modinfo the current course modinfo object
+     * @return section_info[] an array of section_info to display
      */
-    public function export_for_template(renderer_base $output) {
-        global $PAGE;
-        $PAGE->requires->js_call_amd('format_drip/mutations', 'init');
-        $PAGE->requires->js_call_amd('format_drip/section', 'init');
-        return parent::export_for_template($output);
+    public function get_sections_to_display(course_modinfo $modinfo): array {
+        global $USER;
+
+        $enrolstart = $this->format->get_enrolment_start($USER->id);
+        $sections = [];
+        $singlesection = $this->format->get_section_number();
+        if ($singlesection) {
+            $sectioninfo = $modinfo->get_section_info($singlesection);
+            if (!$this->format->can_access_section($sectioninfo, $enrolstart)) {
+                return $sections;
+            }
+            return [$sectioninfo];
+        }
+
+        $enrolstart = $this->format->get_enrolment_start($USER->id);
+
+        $sections = [];
+
+        foreach ($modinfo->get_section_info_all() as $sectionnumber => $thissection) {
+            // Always show section 0 & section 1, by default.
+            if ($sectionnumber < $this->format->get_drip_start()) {
+                $sections[$sectionnumber] = $thissection;
+                continue;
+            }
+            $cancaccessformatsection = $this->format->can_access_section($thissection, $enrolstart);
+            // Check if this section is not yet visible for the user based on the drip format settings.
+            if (!$cancaccessformatsection && empty($course->showhiddendripsections)) {
+                continue;
+            }
+            $sections[$sectionnumber] = $thissection;
+        }
+
+        return $sections;
     }
 
     /**
@@ -105,45 +135,4 @@ class content extends content_base {
         }
         return $sections;
     }
-
-    /**
-     * Return an array of sections to display.
-     *
-     * This method is used to differentiate between display a specific section
-     * or a list of them.
-     *
-     * @param course_modinfo $modinfo the current course modinfo object
-     * @return section_info[] an array of section_info to display
-     */
-    public function get_sections_to_display(course_modinfo $modinfo): array {
-        global $USER;
-
-        $enrolstart = $this->format->get_enrolment_start($USER->id);
-        $sections = [];
-        $singlesectionid = $this->format->get_sectionid();
-        if ($singlesectionid) {
-            $sectioninfo = $modinfo->get_section_info_by_id($singlesectionid);
-            if (!$this->format->can_access_section($sectioninfo, $enrolstart)) {
-                return $sections;
-            }
-            return [$sectioninfo];
-        }
-
-        foreach ($modinfo->get_listed_section_info_all() as $sectionnumber => $thissection) {
-            // Always show section 0 & section 1, by default.
-            if ($sectionnumber < $this->format->get_drip_start()) {
-                $sections[$sectionnumber] = $thissection;
-                continue;
-            }
-            $cancaccessformatsection = $this->format->can_access_section($thissection, $enrolstart);
-            // Check if this section is visible for the user based on the drip format settings.
-            if (!$cancaccessformatsection && empty($course->showhiddendripsections)) {
-                break;
-            }
-            $sections[$sectionnumber] = $thissection;
-        }
-
-        return $sections;
-    }
-
 }
