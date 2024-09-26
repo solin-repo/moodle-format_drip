@@ -17,25 +17,25 @@
 /**
  * Specialised restore for format_drip
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Onno (onno@solin.co)
+ * @author    Martijn (martijn@solin.nl)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Specialised restore for format_drip
  *
  * Processes 'numsections' from the old backup files and hides sections that used to be "orphaned"
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Onno (onno@solin.co)
+ * @author    Martijn (martijn@solin.nl)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_format_drip_plugin extends restore_format_plugin {
 
@@ -78,16 +78,20 @@ class restore_format_drip_plugin extends restore_format_plugin {
     }
 
     /**
-     * Dummy process method
+     * Dummy process method.
+     *
+     * @return void
      */
     public function process_dummy_course() {
 
     }
 
     /**
-     * Executed after course restore is complete
+     * Executed after course restore is complete.
      *
-     * This method is only executed if course configuration was overridden
+     * This method is only executed if course configuration was overridden.
+     *
+     * @return void
      */
     public function after_restore_course() {
         global $DB;

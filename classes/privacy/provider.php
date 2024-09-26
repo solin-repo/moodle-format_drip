@@ -13,34 +13,37 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
- * Privacy Subsystem implementation for format_drip.
+ * Privacy Subsystem implementation for Drip course format.
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Onno (onno@solin.co)
+ * @author    Martijn (martijn@solin.nl)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 namespace format_drip\privacy;
-defined('MOODLE_INTERNAL') || die();
+
+use core_privacy\local\metadata\null_provider;
+
 /**
- * Privacy Subsystem for format_drip implementing null_provider.
+ * Privacy Subsystem for Drip course format implementing null_provider.
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
+ * @copyright 2020 onwards Solin (https://solin.co)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements null_provider {
+
     /**
      * Get the language string identifier with the component's language
      * file to explain why this plugin stores no data.
      *
      * @return  string
      */
-    public static function get_reason() : string {
+    public static function get_reason(): string {
         return 'privacy:metadata';
     }
 }

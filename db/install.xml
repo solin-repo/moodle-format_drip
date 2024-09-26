@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="course/format/drip/db" VERSION="2024081500" COMMENT="Table for tracking sent drip emails" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://download.moodle.org/xmldb.xsd">
+    <TABLES>
+        <TABLE NAME="format_drip_email_log" COMMENT="Log of sent emails for drip sections">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" COMMENT="Primary Key"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="User ID"/>
+                <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Course Section ID"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Timestamp of email sent"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="usersection" TYPE="unique" FIELDS="userid,sectionid"/>
+            </KEYS>
+        </TABLE>
+    </TABLES>
+</XMLDB>

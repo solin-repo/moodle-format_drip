@@ -9,3 +9,9 @@ div.dripsection_info {
 div.course-content ul.drip li.section.hidden h3.sectionname span a {
     color: #CCC;
 }
+
+.course-content ul.drip {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}

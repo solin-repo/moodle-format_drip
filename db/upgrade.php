@@ -17,14 +17,13 @@
 /**
  * Upgrade scripts for course format "Drip"
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Onno (onno@solin.co)
+ * @author    Martijn (martijn@solin.nl)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Upgrade script for format_drip
@@ -33,22 +32,22 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool result
  */
 function xmldb_format_drip_upgrade($oldversion) {
-    global $CFG, $DB;
+    global $DB;
 
-    // Automatically generated Moodle v3.5.0 release upgrade line.
-    // Put any upgrade step following this.
+    // Ensure this block is only run if the version is less than 2024081404.
+    if ($oldversion < 2024081404) {
+        // Path to the install.xml file.
+        $file = __DIR__ . '/install.xml';
 
-    // Automatically generated Moodle v3.6.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Table name to create.
+        $tablename = 'format_drip_email_log';
 
-    // Automatically generated Moodle v3.7.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Create the new table using the install_one_table_from_xmldb_file function.
+        $DB->get_manager()->install_one_table_from_xmldb_file($file, $tablename);
 
-    // Automatically generated Moodle v3.8.0 release upgrade line.
-    // Put any upgrade step following this.
-
-    // Automatically generated Moodle v3.9.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Mark the new version as the current savepoint.
+        upgrade_plugin_savepoint(true, 2024081404, 'format', 'drip');
+    }
 
     return true;
 }

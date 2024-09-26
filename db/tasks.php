@@ -15,12 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Legacy file to avoid exceptions when formats require it.
+ * Version details
  *
  * @package   format_drip
- * @copyright 2020 - 2024 onwards Solin (https://solin.co)
- * @author    Denis (denis@solin.co)
+ * @copyright 2024 onwards Solin (https://solin.co)
  * @author    Onno (onno@solin.co)
- * @author    Martijn (martijn@solin.nl)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+defined('MOODLE_INTERNAL') || die();
+
+$tasks = [
+    [
+        'classname' => 'format_drip\task\send_drip_section_emails',
+        'blocking' => 0,
+        'minute' => '0',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*',
+    ],
+];

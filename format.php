@@ -15,13 +15,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Drip course format.  Display the whole course as "driptopics" made of modules.
+ * Drip course format. Display the whole course as "drip topics" made of modules.
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Onno (onno@solin.co)
+ * @author    Martijn (martijn@solin.nl)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -29,18 +30,19 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/filelib.php');
 require_once($CFG->libdir.'/completionlib.php');
 
-// Horrible backwards compatible parameter aliasing..
-if ($driptopic = optional_param('driptopic', 0, PARAM_INT)) {
+// Horrible backwards compatible parameter aliasing.
+if ($drip = optional_param('drip', 0, PARAM_INT)) {
     $url = $PAGE->url;
-    $url->param('section', $driptopic);
-    debugging('Outdated driptopic param passed to course/view.php', DEBUG_DEVELOPER);
+    $url->param('section', $drip);
+    debugging('Outdated drip param passed to course/view.php', DEBUG_DEVELOPER);
     redirect($url);
 }
-// End backwards-compatible aliasing..
+// End backwards-compatible aliasing.
 
-$context = context_course::instance($course->id);
 // Retrieve course format option fields and add them to the $course object.
-$course = course_get_format($course)->get_course();
+$format = course_get_format($course);
+$course = $format->get_course();
+$context = context_course::instance($course->id);
 
 if (($marker >= 0) && has_capability('moodle/course:setcurrentsection', $context) && confirm_sesskey()) {
     $course->marker = $marker;
@@ -52,11 +54,9 @@ course_create_sections_if_missing($course, 0);
 
 $renderer = $PAGE->get_renderer('format_drip');
 
-if (!empty($displaysection)) {
-    $renderer->print_single_section_page($course, null, null, null, null, $displaysection);
-} else {
-    $renderer->print_multiple_section_page($course, null, null, null, null);
+if (!is_null($displaysection)) {
+    $format->set_sectionnum($displaysection);
 }
-
-// Include course format js module.
-$PAGE->requires->js('/course/format/drip/format.js');
+$outputclass = $format->get_output_classname('content');
+$widget = new $outputclass($format);
+echo $renderer->render($widget);

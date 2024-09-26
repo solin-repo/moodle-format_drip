@@ -15,35 +15,39 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains main class for the course format Topic
+ * This file contains main class for Drip course format.
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2024 onwards Solin (https://solin.co)
+ * @author    Onno (onno@solin.co)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
+
+use format_drip\forms\drip_editsection_form;
+
 require_once($CFG->dirroot. '/course/format/lib.php');
 
-define('DRIPTYPE_DAYS', 'dripdays');
-define('DRIPTYPE_DATE', 'dripdate');
 
 /**
- * Main class for the Drip course format
+ * Main class for the Drip course format.
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2024 onwards Solin (https://solin.co)
+ * @author    Onno (onno@solin.co)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class format_drip extends format_base {
-    private static $sectionformatoptions;
+class format_drip extends core_courseformat\base {
+
+    /** @var int Default interval (in days) between each 'drip' (opening of section) */
+    const DRIP_INTERVAL = 7;
+
+    /** @var int Default section to start dripping (0 & 1 are always visible) */
+    const DRIP_START = 2;
 
     /**
-     * Returns true if this course format uses sections
+     * Returns true if this course format uses sections.
      *
      * @return bool
      */
@@ -52,18 +56,36 @@ class format_drip extends format_base {
     }
 
     /**
+     * Returns true if this course format uses the course index.
+     *
+     * @return bool
+     */
+    public function uses_course_index() {
+        return true;
+    }
+
+    /**
+     * Returns true if this course format uses indentation.
+     *
+     * @return bool
+     */
+    public function uses_indentation(): bool {
+        return (get_config('format_drip', 'indentation')) ? true : false;
+    }
+
+    /**
      * Returns the display name of the given section that the course prefers.
      *
-     * Use section name is specified by user. Otherwise use default ("Topic #")
+     * Use section name is specified by user. Otherwise use default ("Drip #").
      *
      * @param int|stdClass $section Section object from database or just field section.section
-     * @return string Display name that the course format prefers, e.g. "Topic 2"
+     * @return string Display name that the course format prefers, e.g. "Drip 2"
      */
     public function get_section_name($section) {
         $section = $this->get_section($section);
         if ((string)$section->name !== '') {
             return format_string($section->name, true,
-                    array('context' => context_course::instance($this->courseid)));
+                ['context' => context_course::instance($this->courseid)]);
         } else {
             return $this->get_default_section_name($section);
         }
@@ -73,68 +95,59 @@ class format_drip extends format_base {
      * Returns the default section name for the drip course format.
      *
      * If the section number is 0, it will use the string with key = section0name from the course format's lang file.
-     * If the section number is not 0, the base implementation of format_base::get_default_section_name which uses
-     * the string with the key = 'sectionname' from the course format's lang file + the section number will be used.
+     * If the section number is not 0, it will consistently return the name 'newsection', disregarding the specific section number.
      *
-     * @param stdClass $section Section object from database or just field course_sections section
+     * @param int|stdClass $section Section object from database or just field course_sections section
      * @return string The default value for the section name.
      */
     public function get_default_section_name($section) {
-        if ($section->section == 0) {
-            // Return the general section.
+        $section = $this->get_section($section);
+        if ($section->sectionnum == 0) {
             return get_string('section0name', 'format_drip');
-        } else {
-            // Use format_base::get_default_section_name implementation which
-            // will display the section name in "Topic n" format.
-            return parent::get_default_section_name($section);
         }
+
+        return get_string('newsection', 'format_drip');
     }
 
     /**
-     * The URL to use for the specified course (with section)
+     * Generate the title for this section page.
+     *
+     * @return string the page title
+     */
+    public function page_title(): string {
+        return get_string('sectionoutline');
+    }
+
+    /**
+     * The URL to use for the specified course (with section).
      *
      * @param int|stdClass $section Section object from database or just field course_sections.section
      *     if omitted the course view page is returned
      * @param array $options options for view URL. At the moment core uses:
-     *     'navigation' (bool) if true and section has no separate page, the function returns null
-     *     'sr' (int) used by multipage formats to specify to which section to return
+     *     'navigation' (bool) if true and section not empty, the function returns section page; otherwise, it returns course page.
+     *     'sr' (int) used by course formats to specify to which section to return
      * @return null|moodle_url
      */
-    public function get_view_url($section, $options = array()) {
-        global $CFG;
+    public function get_view_url($section, $options = []) {
         $course = $this->get_course();
-        $url = new moodle_url('/course/view.php', array('id' => $course->id));
-
-        $sr = null;
-        if (array_key_exists('sr', $options)) {
-            $sr = $options['sr'];
-        }
-        if (is_object($section)) {
+        if (array_key_exists('sr', $options) && !is_null($options['sr'])) {
+            $sectionno = $options['sr'];
+        } else if (is_object($section)) {
             $sectionno = $section->section;
         } else {
             $sectionno = $section;
         }
-        if ($sectionno !== null) {
-            if ($sr) {
-                $usercoursedisplay = COURSE_DISPLAY_MULTIPAGE;
-                $sectionno = $sr;
-            } else {
-                $usercoursedisplay = COURSE_DISPLAY_SINGLEPAGE;
-            }
-            if ($sectionno != 0 && $usercoursedisplay == COURSE_DISPLAY_MULTIPAGE) {
-                $url->param('section', $sectionno);
-            } else {
-                if (empty($CFG->linkcoursesections) && !empty($options['navigation'])) {
-                    return null;
-                }
-                $url->set_anchor('section-'.$sectionno);
-            }
+        if ((!empty($options['navigation']) || array_key_exists('sr', $options)) && $sectionno !== null) {
+            // Display section on separate page.
+            $sectioninfo = $this->get_section($sectionno);
+            return new moodle_url('/course/section.php', ['id' => $sectioninfo->id]);
         }
-        return $url;
+
+        return new moodle_url('/course/view.php', ['id' => $course->id]);
     }
 
     /**
-     * Returns the information about the ajax support in the given source format
+     * Returns the information about the ajax support in the given source format.
      *
      * The returned object's property (boolean)capable indicates that
      * the course format supports Moodle course ajax features.
@@ -148,10 +161,20 @@ class format_drip extends format_base {
     }
 
     /**
-     * Loads all of the course sections into the navigation
+     * Returns true if this course format supports components.
+     *
+     * @return bool
+     */
+    public function supports_components() {
+        return true;
+    }
+
+    /**
+     * Loads all of the course sections into the navigation.
      *
      * @param global_navigation $navigation
      * @param navigation_node $node The course node within the navigation
+     * @return void
      */
     public function extend_course_navigation($navigation, navigation_node $node) {
         global $PAGE;
@@ -182,7 +205,7 @@ class format_drip extends format_base {
     }
 
     /**
-     * Custom action after section has been moved in AJAX mode
+     * Custom action after section has been moved in AJAX mode.
      *
      * Used in course/rest.php
      *
@@ -190,7 +213,7 @@ class format_drip extends format_base {
      */
     public function ajax_section_move() {
         global $PAGE;
-        $titles = array();
+        $titles = [];
         $course = $this->get_course();
         $modinfo = get_fast_modinfo($course);
         $renderer = $this->get_renderer($PAGE);
@@ -199,79 +222,128 @@ class format_drip extends format_base {
                 $titles[$number] = $renderer->section_title($section, $course);
             }
         }
-        return array('sectiontitles' => $titles, 'action' => 'move');
+        return ['sectiontitles' => $titles, 'action' => 'move'];
     }
 
     /**
-     * Returns the list of blocks to be automatically added for the newly created course
+     * Returns the list of blocks to be automatically added for the newly created course.
      *
      * @return array of default blocks, must contain two keys BLOCK_POS_LEFT and BLOCK_POS_RIGHT
      *     each of values is an array of block names (for left and right side columns)
      */
     public function get_default_blocks() {
-        return array(
-            BLOCK_POS_LEFT => array(),
-            BLOCK_POS_RIGHT => array()
-        );
+        return [
+            BLOCK_POS_LEFT => [],
+            BLOCK_POS_RIGHT => [],
+        ];
     }
 
     /**
-     * Definitions of the additional options that this course format uses for course
+     * Definitions of the additional options that this course format uses for course.
      *
      * Drip format uses the following options:
-     * - driptype
-     * - showhiddendripsections
+     * - coursedisplay
+     * - hiddensections
      *
      * @param bool $foreditform
      * @return array of options
      */
     public function course_format_options($foreditform = false) {
         static $courseformatoptions = false;
-
         if ($courseformatoptions === false) {
             $courseconfig = get_config('moodlecourse');
-            $courseformatoptions = array(
-                'driptype' => array(
-                    'default' => DRIPTYPE_DAYS,
-                    'type' => PARAM_TEXT,
-                ),
-                'showhiddendripsections' => array(
-                    'default' => 0,
-                    'type' => PARAM_BOOL,
-                ),
-            );
+            $courseformatoptions = [
+                'coursedisplay' => [
+                    'default' => $courseconfig->coursedisplay,
+                    'type' => PARAM_INT,
+                ],
+                'dripinterval' => [
+                    'type' => PARAM_RAW,
+                    'default' => self::DRIP_INTERVAL,
+                ],
+                'dripstart' => [
+                    'type' => PARAM_RAW,
+                    'default' => self::DRIP_START,
+                ],
+                'email-newcontentavailable-subject' => [
+                    'type' => PARAM_RAW,
+                    'default' => new lang_string('email-newcontentavailable-subject', 'format_drip'),
+                ],
+                'email-newcontentavailable-text' => [
+                    'type' => PARAM_RAW,
+                    'default' => new lang_string('email-newcontentavailable-text', 'format_drip'),
+                ],
+                'email-newcontentavailable-html' => [
+                    'type' => PARAM_RAW,
+                    'default' => new lang_string('email-newcontentavailable-html', 'format_drip'),
+                ],
+            ];
         }
-        if ($foreditform) {
-            $courseformatoptionsedit = array(
-                'driptype' => array(
-                    'label' => new lang_string('driptype', 'format_drip'),
-                    'help' => 'driptype',
-                    'help_component' => 'format_drip',
+        if ($foreditform && !isset($courseformatoptions['coursedisplay']['label'])) {
+            $courseformatoptionsedit = [
+                'coursedisplay' => [
+                    'label' => new lang_string('coursedisplay'),
                     'element_type' => 'select',
-                    'element_attributes' => array(
-                        array(
-                            DRIPTYPE_DAYS => new lang_string('driptype_days', 'format_drip'),
-                            DRIPTYPE_DATE => new lang_string('driptype_date', 'format_drip')
-                        )
-                    ),
-                ),
-                'showhiddendripsections' => array(
-                    'label' => new lang_string('showhiddendripsections', 'format_drip'),
-                    'help' => 'showhiddendripsections',
+                    'element_attributes' => [
+                        [
+                            COURSE_DISPLAY_SINGLEPAGE => new lang_string('coursedisplay_single'),
+                            COURSE_DISPLAY_MULTIPAGE => new lang_string('coursedisplay_multi'),
+                        ],
+                    ],
+                    'help' => 'coursedisplay',
+                    'help_component' => 'moodle',
+                ],
+                'dripinterval' => [
+                    'label' => new lang_string('dripinterval', 'format_drip'),
+                    'element_type' => 'text',
+                    'help' => 'dripdayselement',
                     'help_component' => 'format_drip',
-                    'element_type' => 'select',
-                    'element_attributes' => array(
-                        array(
-                            0 => new lang_string('no'),
-                            1 => new lang_string('yes')
-                        )
-                    ),
-                ),
-            );
-
+                    'name' => 'dripinterval',
+                ],
+                'dripstart' => [
+                    'label' => new lang_string('dripstart', 'format_drip'),
+                    'element_type' => 'text',
+                    'help' => 'dripstartelement',
+                    'help_component' => 'format_drip',
+                    'name' => 'dripstart',
+                ],
+                'email-newcontentavailable-subject' => [
+                    'label' => new lang_string('email-newcontentavailable-subject-label', 'format_drip'),
+                    'element_type' => 'text',
+                    'element_attributes' => [['size' => 60]],
+                    'help' => 'email-newcontentavailable-subject',
+                    'help_component' => 'format_drip',
+                    'name' => 'email-newcontentavailable-subject',
+                ],
+                'email-newcontentavailable-text' => [
+                    'label' => new lang_string('email-newcontentavailable-text-label', 'format_drip'),
+                    'element_type' => 'textarea',
+                    'element_attributes' => [
+                        [
+                            'rows' => 10,
+                            'cols' => 60,
+                        ],
+                    ],
+                    'help' => 'email-newcontentavailable-text',
+                    'help_component' => 'format_drip',
+                    'name' => 'email-newcontentavailable-text',
+                ],
+                'email-newcontentavailable-html' => [
+                    'label' => new lang_string('email-newcontentavailable-html-label', 'format_drip'),
+                    'element_type' => 'textarea',
+                    'element_attributes' => [
+                        [
+                            'rows' => 10,
+                            'cols' => 60,
+                        ],
+                    ],
+                    'help' => 'email-newcontentavailable-html',
+                    'help_component' => 'format_drip',
+                    'name' => 'email-newcontentavailable-html',
+                ],
+            ];
             $courseformatoptions = array_merge_recursive($courseformatoptions, $courseformatoptionsedit);
         }
-
         return $courseformatoptions;
     }
 
@@ -286,7 +358,6 @@ class format_drip extends format_base {
      */
     public function create_edit_form_elements(&$mform, $forsection = false) {
         global $COURSE;
-
         $elements = parent::create_edit_form_elements($mform, $forsection);
 
         if (!$forsection && (empty($COURSE->id) || $COURSE->id == SITEID)) {
@@ -308,7 +379,10 @@ class format_drip extends format_base {
     }
 
     /**
-     * Updates format options for a course
+     * Updates format options for a course.
+     *
+     * In case if course format was changed to 'drip', we try to copy options
+     * 'coursedisplay' and 'hiddensections' from the previous format.
      *
      * @param stdClass|array $data return value from {@link moodleform::get_data()} or array with data
      * @param stdClass $oldcourse if this function is called from {@link update_course()}
@@ -328,12 +402,11 @@ class format_drip extends format_base {
                 }
             }
         }
-
         return $this->update_format_options($data);
     }
 
     /**
-     * Whether this format allows to delete sections
+     * Whether this format allows to delete sections.
      *
      * Do not call this function directly, instead use {@link course_can_delete_section()}
      *
@@ -342,28 +415,6 @@ class format_drip extends format_base {
      */
     public function can_delete_section($section) {
         return true;
-    }
-
-    /**
-     * Prepares the templateable object to display section name
-     *
-     * @param \section_info|\stdClass $section
-     * @param bool $linkifneeded
-     * @param bool $editable
-     * @param null|lang_string|string $edithint
-     * @param null|lang_string|string $editlabel
-     * @return \core\output\inplace_editable
-     */
-    public function inplace_editable_render_section_name($section, $linkifneeded = true,
-                                                         $editable = null, $edithint = null, $editlabel = null) {
-        if (empty($edithint)) {
-            $edithint = new lang_string('editsectionname', 'format_drip');
-        }
-        if (empty($editlabel)) {
-            $title = get_section_name($section->course, $section);
-            $editlabel = new lang_string('newsectionname', 'format_drip', $title);
-        }
-        return parent::inplace_editable_render_section_name($section, $linkifneeded, $editable, $edithint, $editlabel);
     }
 
     /**
@@ -388,6 +439,19 @@ class format_drip extends format_base {
         return !$section->section || $section->visible;
     }
 
+    /**
+     * Callback used in WS core_course_edit_section when teacher performs an AJAX action on a section (show/hide).
+     *
+     * Access to the course is already validated in the WS but the callback has to make sure
+     * that particular action is allowed by checking capabilities
+     *
+     * Course formats should register.
+     *
+     * @param section_info|stdClass $section
+     * @param string $action
+     * @param int $sr
+     * @return null|array any data for the Javascript post-processor (must be json-encodeable)
+     */
     public function section_action($section, $action, $sr) {
         global $PAGE;
 
@@ -401,7 +465,15 @@ class format_drip extends format_base {
         // For show/hide actions call the parent method and return the new content for .section_availability element.
         $rv = parent::section_action($section, $action, $sr);
         $renderer = $PAGE->get_renderer('format_drip');
-        $rv['section_availability'] = $renderer->section_availability($this->get_section($section));
+
+        if (!($section instanceof section_info)) {
+            $modinfo = course_modinfo::instance($this->courseid);
+            $section = $modinfo->get_section_info($section->section);
+        }
+        $elementclass = $this->get_output_classname('content\\section\\availability');
+        $availability = new $elementclass($this, $section);
+
+        $rv['section_availability'] = $renderer->render($availability);
         return $rv;
     }
 
@@ -413,265 +485,113 @@ class format_drip extends format_base {
      */
     public function get_config_for_external() {
         // Return everything (nothing to hide).
-        return $this->get_format_options();
+        $formatoptions = $this->get_format_options();
+        $formatoptions['indentation'] = get_config('format_drip', 'indentation');
+        return $formatoptions;
     }
 
     /**
-     * Prepares values of course or section format options before storing them in DB
+     * Get the required javascript files for the course format.
      *
-     * If an option has invalid value it is not returned
-     *
-     * @param array $rawdata associative array of the proposed course/section format options
-     * @param int|null $sectionid null if it is course format option
-     * @return array array of options that have valid values
+     * @return array The list of javascript files required by the course format.
      */
-    protected function validate_format_options(array $rawdata, int $sectionid = null) : array {
-
-        if (!$sectionid) {
-            $allformatoptions = $this->course_format_options(true);
-        } else {
-            $allformatoptions = $this->section_format_options(true);
-        }
-        $data = array_intersect_key($rawdata, $allformatoptions);
-        foreach ($data as $key => $value) {
-            $option = $allformatoptions[$key] + ['type' => PARAM_RAW, 'element_type' => null, 'element_attributes' => [[]]];
-            $data[$key] = clean_param($value, $option['type']);
-            if ($option['element_type'] === 'select' && !array_key_exists($data[$key], $option['element_attributes'][0])) {
-                // Value invalid for select element, skip.
-                unset($data[$key]);
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Definitions of the additional options that this course format uses for section.
-     *
-     * @param bool $foreditform
-     * @return array
-     */
-    public function section_format_options($foreditform = false) {
-        static $sectionformatoptions = false;
-
-        if ($sectionformatoptions === false) {
-            if (!empty($this->course->driptype)) {
-                $driptype = $this->course->driptype;
-            } else if (!empty($this->courseid)) {
-                $driptype = $this->get_course_driptype($this->courseid);
-            }
-
-            if (empty($driptype)) {
-                $driptype = DRIPTYPE_DAYS;
-            }
-
-            switch ($driptype) {
-                case DRIPTYPE_DAYS:
-                    $sectionformatoptions = array(
-                        'dripdays' => array(
-                            'label' => new lang_string('dripdays', 'format_drip'),
-                            'element_type' => 'text',
-                            'help' => 'dripdayselement',
-                            'help_component' => 'format_drip',
-                            'type' => PARAM_INT,
-                            'name' => 'dripdays'
-                        ),
-                    );
-                    break;
-
-                case DRIPTYPE_DATE:
-                    $sectionformatoptions = array(
-                        'dripdate' => array(
-                            'label' => new lang_string('dripdate', 'format_drip'),
-                            'element_type' => 'date_time_selector',
-                            'help' => 'dripdateelement',
-                            'help_component' => 'format_drip',
-                            'type' => PARAM_INT,
-                            'name' => 'dripdate',
-                            'element_attributes' => array(
-                                array('optional' => true)
-                            )
-                        ),
-                    );
-                    break;
-            }
-        }
-
-        return $sectionformatoptions;
-    }
-
-    /**
-     * Fills the section data with drip info.
-     *
-     */
-    public function fill_sectiondata() {
-        global $DB;
-
-        $sectiondata = array();
-        $driptype = $this->course->driptype;
-
-        $modinfo = get_fast_modinfo($this->course);
-        foreach ($modinfo->get_section_info_all() as $section) {
-            $params = array('courseid' => $this->course->id, 'format' => $this->format,
-                                'sectionid' => $section->id, 'name' => $driptype);
-            $sectiondata[$section->id] = $DB->get_field('course_format_options', 'value', $params);
-        }
-
-        $this->dripsectiondata = $sectiondata;
+    public function get_required_jsfiles(): array {
+        return [];
     }
 
     /**
      * Checks if the current user can access the section.
      *
-     * @param object - the section that is accessed.
-     * @param int - the startdate of the enrolment.
-     * @return bool - whether the user can access it.
+     * @param object $section - The section being accessed.
+     * @param int $enrolstart - The start date of the enrolment as a Unix timestamp.
+     * @return bool - Whether the user can access the section.
      */
     public function can_access_section($section, $enrolstart) {
-        global $USER, $DB, $PAGE;
+        global $PAGE;
 
-        // Site admin can always access it.
+        // Site admin can always access the section.
         if (is_siteadmin()) {
             return true;
         }
 
         $context = context_course::instance($this->course->id);
 
-        // Someone who is editing the course can always access.
-        if (($PAGE->user_is_editing() && has_capability('moodle/course:update', $context)) ||
-            has_capability('moodle/course:update', $context)) {
+        // Users with editing capabilities can always access the section.
+        if ($PAGE->user_is_editing() && has_capability('moodle/course:update', $context)) {
             return true;
         }
 
-        if (empty($this->dripsectiondata)) {
-            $this->fill_sectiondata();
+        // Ensure section number is valid.
+        if (!isset($section->section) || !is_numeric($section->section)) {
+            return false; // Invalid section number, access denied.
         }
 
-        $now = time();
-
-        // Check the drip format settings.
-        switch ($this->course->driptype) {
-            case DRIPTYPE_DAYS:
-                $days = 0;
-                if (!empty($this->dripsectiondata[$section->id])) {
-                    $days = $this->dripsectiondata[$section->id];
-                }
-
-                $opentime = mktime(0, 0, 0, date("n", $enrolstart), date("j", $enrolstart) + $days, date("Y", $enrolstart));
-                break;
-
-            case DRIPTYPE_DATE:
-                $opentime = $this->dripsectiondata[$section->id];
-                break;
-        }
-
-        if ($opentime < $now) {
+        // By default, sections 0 & 1 are always visible.
+        if ($section->section < $this->get_drip_start()) {
             return true;
         }
 
-        return false;
+        // Retrieve the drip interval from format options or fallback to the default class constant.
+        $formatoptions = $this->get_format_options();
+        if (isset($formatoptions['dripinterval'])) {
+            $dripinterval = $formatoptions['dripinterval'];
+        } else {
+            $dripinterval = self::DRIP_INTERVAL;
+        }
+
+        // Calculate the section's open time based on the enrollment start date and drip interval.
+        $opentime = $enrolstart + ($dripinterval * $section->section * 86400);
+
+        // Allow access if the current time is past the calculated open time.
+        return time() >= $opentime;
     }
 
+
+
     /**
-     * Get the startdate of the enrolment for the current user.
+     * Get the start date of the enrolment for the specified user.
      *
-     * @return int - timestamp of the startdate.
+     * @param int $userid The ID of the user whose enrolment start date is being retrieved.
+     * @return int The timestamp of the start date.
      */
-    public function get_enrolment_start() {
-        global $USER, $DB;
+    public function get_enrolment_start($userid) {
+        global $DB;
 
         $sql = "SELECT ue.timestart
-        FROM {user_enrolments} ue
-        JOIN {enrol} e ON ue.enrolid = e.id
-        WHERE e.courseid = :courseid
-        AND ue.userid = :userid
-        AND ue.status = :enrolstatus
-        ORDER BY ue.timestart ASC
-        LIMIT 1";
-        $params = array('courseid' => $this->course->id, 'userid' => $USER->id, 'enrolstatus' => ENROL_USER_ACTIVE);
+                FROM {user_enrolments} ue
+                JOIN {enrol} e ON ue.enrolid = e.id
+                WHERE e.courseid = :courseid
+                AND ue.userid = :userid
+                AND ue.status = :enrolstatus
+                ORDER BY ue.timestart ASC
+                LIMIT 1";
+        $params = ['courseid' => $this->course->id, 'userid' => $userid, 'enrolstatus' => ENROL_USER_ACTIVE];
 
         return $DB->get_field_sql($sql, $params);
     }
 
     /**
-     * Get the driptype of the current course.
+     * Get the drip starting section
      *
-     * @param int - the id of the course.
-     * @return string - the current driptype.
+     * @return int The number of the starting section
      */
-    public function get_course_driptype($courseid) {
-        global $DB;
-
-        $params = array('courseid' => $courseid, 'format' => 'drip', 'sectionid' => 0, 'name' => 'driptype');
-        return $DB->get_field('course_format_options', 'value', $params);
-    }
-
-    /**
-     * Get the available info for a drip section.
-     *
-     * @param int - the id of the section.
-     * @return string - the current driptype.
-     */
-    public function get_dripsection_available_info($sectionid, $driptype) {
-        global $DB;
-
-        switch ($driptype) {
-            case DRIPTYPE_DAYS:
-                $days = 0;
-                if (!empty($this->dripsectiondata[$sectionid])) {
-                    $days = $this->dripsectiondata[$sectionid];
-                }
-
-                $enrolstart = $this->get_enrolment_start();
-
-                $opentime = mktime(0, 0, 0, date("n", $enrolstart), date("j", $enrolstart) + $days, date("Y", $enrolstart));
-                break;
-
-            case DRIPTYPE_DATE:
-                $opentime = $this->dripsectiondata[$sectionid];
-                break;
+    public function get_drip_start() {
+        // Retrieve the drip starting section from format options or fallback to the default class constant.
+        $formatoptions = $this->get_format_options();
+        if (isset($formatoptions['dripstart'])) {
+            return $formatoptions['dripstart'];
         }
-
-        $info = get_string('dripsection_info', 'format_drip', userdate($opentime));
-
-        return $info;
-    }
-
-    /**
-     * Get the current driptype for a course or the default.
-     *
-     * @param stdClass - The course entry from DB
-     * @return string - the current driptype.
-     */
-    public function get_course_driptype_with_default($course) {
-        $dripformat = (!empty($course->driptype) ? $course->driptype : DRIPTYPE_DAYS);
-
-        return $dripformat;
-    }
-
-    /**
-     * Get the startdate of the enrolment for the current user with a default 0.
-     *
-     * @param string - the current driptype.
-     * @return int - timestamp of the startdate.
-     */
-    public function get_enrolstart_with_default($driptype) {
-        $enrolstart = 0;
-        if ($driptype == DRIPTYPE_DAYS) {
-            $enrolstart = $this->get_enrolment_start();
-        }
-
-        return $enrolstart;
+        return self::DRIP_START;
     }
 }
 
 /**
- * Implements callback inplace_editable() allowing to edit values in-place
+ * Implements callback inplace_editable() allowing to edit values in-place.
  *
  * @param string $itemtype
  * @param int $itemid
  * @param mixed $newvalue
- * @return \core\output\inplace_editable
+ * @return inplace_editable
  */
 function format_drip_inplace_editable($itemtype, $itemid, $newvalue) {
     global $DB, $CFG;
@@ -679,7 +599,16 @@ function format_drip_inplace_editable($itemtype, $itemid, $newvalue) {
     if ($itemtype === 'sectionname' || $itemtype === 'sectionnamenl') {
         $section = $DB->get_record_sql(
             'SELECT s.* FROM {course_sections} s JOIN {course} c ON s.course = c.id WHERE s.id = ? AND c.format = ?',
-            array($itemid, 'drip'), MUST_EXIST);
+            [$itemid, 'drip'], MUST_EXIST);
         return course_get_format($section->course)->inplace_editable_update_section_name($section, $itemtype, $newvalue);
     }
+}
+
+/**
+ * Serves the CSS for the drip course format.
+ *
+ * @param moodle_page $page The Moodle page object.
+ */
+function format_drip_css(moodle_page $page) {
+    $page->requires->css('/course/format/drip/styles.css');
 }

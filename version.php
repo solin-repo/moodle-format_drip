@@ -17,15 +17,16 @@
 /**
  * Version details
  *
- * @package    format
- * @subpackage drip
- * @copyright  2020 onwards Solin (https://solin.co)
- * @author     Martijn (info@solin.nl)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   format_drip
+ * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Onno (onno@solin.co)
+ * @author    Martijn (martijn@solin.nl)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2020103000;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2020060900;        // Requires this Moodle version.
+$plugin->version   = 2024090301;        // The current plugin version (Date: YYYYMMDDXX).
+$plugin->requires  = 2024042201;        // Requires this Moodle version.
 $plugin->component = 'format_drip';    // Full name of the plugin (used for diagnostics).
