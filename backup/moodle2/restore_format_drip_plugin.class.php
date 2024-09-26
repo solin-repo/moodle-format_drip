@@ -18,10 +18,10 @@
  * Specialised restore for format_drip
  *
  * @package   format_drip
- * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2024 onwards Solin (https://solin.co)
  * @author    Denis (denis@solin.co)
- * @author    Onno (onno@solin.co)
  * @author    Martijn (martijn@solin.nl)
+ * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -31,10 +31,10 @@
  * Processes 'numsections' from the old backup files and hides sections that used to be "orphaned"
  *
  * @package   format_drip
- * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2024 onwards Solin (https://solin.co)
  * @author    Denis (denis@solin.co)
- * @author    Onno (onno@solin.co)
  * @author    Martijn (martijn@solin.nl)
+ * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_format_drip_plugin extends restore_format_plugin {

@@ -18,10 +18,10 @@
  * Strings for component 'format_drip', language 'en', branch 'MOODLE_20_STABLE'
  *
  * @package   format_drip
- * @copyright 2020 - 2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2024 onwards Solin (https://solin.co)
  * @author    Denis (denis@solin.co)
- * @author    Onno (onno@solin.co)
  * @author    Martijn (martijn@solin.nl)
+ * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -42,16 +42,15 @@ $string['dripstartelement_help'] = 'The first section to \'drip\' to the user (e
 $string['driptopicoutline'] = 'Section outline';
 $string['editsection'] = 'Edit section';
 $string['editsectionname'] = 'Edit section name';
-$string['email-newcontentavailable-html'] = 'Hi {$a->firstname},
-
-Great news! 🎉 New content in your course, {$a->fullcoursename}, is now live and ready for you to explore: <a href="{$a->sectionlink}" target="_blank">{$a->sectiontitle}</a>.
-
-Click on the title above to dive in, discover new insights, and engage with fresh material that will take your learning journey to the next level.
-
-We can\'t wait to see your progress! Head over to <a href="{$a->sectionlink}" target="_blank">{$a->fullcoursename}</a> now and start exploring.
-
-Best regards,
-{$a->sitename}';
+$string['email-newcontentavailable-html'] = '
+<p>Hi {$a->firstname},</p>
+<p>Great news! 🎉 New content in your course, <strong>{$a->fullcoursename}</strong>, is now live and ready for you to explore:</p>
+<p><a href="{$a->sectionlink}" target="_blank"><strong>{$a->sectiontitle}</strong></a></p>
+<p>Click on the title above to dive in, discover new insights, and engage with fresh material that will take your learning journey to the next level.</p>
+<p>We can\'t wait to see your progress! Head over to <a href="{$a->sectionlink}" target="_blank">{$a->fullcoursename}</a> now and start exploring.</p>
+<p>Best regards,<br>
+{$a->sitename}</p>
+<p class="powered-by">Powered by <a href="https://solin.co" target="_blank">Solin</a></p>';
 $string['email-newcontentavailable-html-label'] = 'Email body html';
 $string['email-newcontentavailable-html_help'] = 'Html version of the email sent out whenever a new section is available. You can use the following variables:
 <ul>
@@ -88,7 +87,8 @@ Dive in to discover new insights and engage with fresh material that will take y
 We can\'t wait to see your progress! Head over to {$a->fullcoursename} now and start exploring.
 
 Best regards,
-{$a->sitename}';
+{$a->sitename}
+Powered by Solin (https://solin.co)';
 $string['email-newcontentavailable-text-label'] = 'Email body plain text';
 $string['email-newcontentavailable-text_help'] = 'Plain text version of the email sent out whenever a new section is available. You can use the following variables:
 <ul>
@@ -110,8 +110,8 @@ $string['newsection'] = 'New section';
 $string['newsectionname'] = 'New name for section {$a}';
 $string['page-course-view-drip'] = 'Any course main page in drip format';
 $string['page-course-view-drip-x'] = 'Any course page in drip format';
-$string['plugin_description'] = 'The course is divided into sections that are \'dripped out\' over time at set intervals.';
-$string['pluginname'] = 'Drip format';
+$string['plugin_description'] = 'The course is divided into sections that are \'dripped out\' over time at set intervals. Developed and maintained by Solin (https://solin.co)';
+$string['pluginname'] = 'Drip format (by Solin)';
 $string['privacy:metadata'] = 'The Drip format plugin does not store any personal data.';
 $string['section0name'] = 'General';
 $string['section_highlight_feedback'] = 'Section {$a->name} highlighted.';

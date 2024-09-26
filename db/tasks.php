@@ -18,7 +18,9 @@
  * Version details
  *
  * @package   format_drip
- * @copyright 2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Martijn (martijn@solin.nl)
  * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
