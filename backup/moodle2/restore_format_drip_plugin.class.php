@@ -18,9 +18,7 @@
  * Specialised restore for format_drip
  *
  * @package   format_drip
- * @copyright 2020-2024 onwards Solin (https://solin.co)
- * @author    Denis (denis@solin.co)
- * @author    Martijn (martijn@solin.nl)
+ * @copyright 2020 onwards Solin (https://solin.co)
  * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -31,9 +29,7 @@
  * Processes 'numsections' from the old backup files and hides sections that used to be "orphaned"
  *
  * @package   format_drip
- * @copyright 2020-2024 onwards Solin (https://solin.co)
- * @author    Denis (denis@solin.co)
- * @author    Martijn (martijn@solin.nl)
+ * @copyright 2020 onwards Solin (https://solin.co)
  * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
