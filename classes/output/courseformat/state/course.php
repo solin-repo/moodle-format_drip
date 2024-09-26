@@ -43,7 +43,7 @@ class course extends base_course {
 
         $format = $this->format;
         $course = $format->get_course();
-        $context = $format->get_context();
+        $context = \context_course::instance($course->id);
         // State must represent always the most updated version of the course.
         $modinfo = course_modinfo::instance($course);
 
