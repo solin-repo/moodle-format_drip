@@ -566,7 +566,7 @@ class format_drip extends core_courseformat\base {
      * @return bool - whether the user can access it.
      */
     public function can_access_section($section, $enrolstart) {
-        global $PAGE;
+        global $PAGE, $USER;
 
         // Site admin can always access the section.
         if (is_siteadmin()) {
@@ -592,17 +592,31 @@ class format_drip extends core_courseformat\base {
 
         // Retrieve the drip interval from format options or fallback to the default class constant.
         $formatoptions = $this->get_format_options();
-        if (isset($formatoptions['dripinterval'])) {
-            $dripinterval = $formatoptions['dripinterval'];
-        } else {
-            $dripinterval = self::DRIP_INTERVAL;
+        $dripinterval = $formatoptions['dripinterval'] ?? self::DRIP_INTERVAL;
+
+        // Use the user's time zone if available, otherwise fall back to Moodle's default time zone.
+        $usertimezone = $USER->timezone ?? core_date::get_server_timezone()->getName();
+
+        // Get the user's timezone or fallback to Moodle's default server timezone.
+        try {
+            $usertimezoneobj = new \DateTimeZone($usertimezone); // This is already an object.
+        } catch (\Exception $e) {
+            $usertimezoneobj = new \DateTimeZone(core_date::get_server_timezone()); // Create an object from the server timezone string.
         }
 
-        // Calculate the section's open time based on the enrollment start date and drip interval.
-        $opentime = $enrolstart + ($dripinterval * $section->section * 86400);
+        $enrolstartdatetime = new \DateTime('@' . $enrolstart); // Create from Unix timestamp.
+        $enrolstartdatetime->setTimezone($usertimezoneobj);
+        $enrolstartdatetime->setTime(0, 0); // Round down to local midnight.
 
-        // Allow access if the current time is past the calculated open time.
-        return time() >= $opentime;
+        // Calculate the section's open time based on the local midnight of enrolstart.
+        $opentime = clone $enrolstartdatetime;
+        $opentime->modify('+' . (($section->section - ($this->get_drip_start() - 1)) * $dripinterval) . ' days');
+
+        // Get the current time in the user's local time zone.
+        $currenttime = new \DateTime('now', $usertimezoneobj);
+
+        // Allow access if the current local time is past the calculated open time.
+        return $currenttime >= $opentime;
     }
 
     /**

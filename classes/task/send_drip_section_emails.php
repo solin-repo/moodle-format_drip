@@ -18,7 +18,9 @@
  * Version details
  *
  * @package   format_drip
- * @copyright 2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Martijn (martijn@solin.nl)
  * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -34,7 +36,9 @@ require_once($CFG->dirroot . '/course/format/drip/lib.php');
  * Scheduled task for sending out ('dripping') emails whenever a new section is available.
  *
  * @package   format_drip
- * @copyright 2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2024 onwards Solin (https://solin.co)
+ * @author    Denis (denis@solin.co)
+ * @author    Martijn (martijn@solin.nl)
  * @author    Onno (onno@solin.co)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -56,11 +60,27 @@ class send_drip_section_emails extends \core\task\scheduled_task {
         global $DB, $SITE;
 
         // Get the current timestamp in PHP.
-        $currenttimestamp = time();
+        $yesterday = time() - (24 * 60 * 60);
 
-        // SQL query to retrieve users who are due to receive a notification (we skip the sections 0 & 1 by default).
-        $sql = "
-            SELECT
+        // Stupid hack to make the SQL below work for both PostgreSQL and MySQL (other DB types are untested).
+        $integer = self::get_cast_type();
+
+        /* The SQL query retrieves user data and course section information for users who are due to receive drip emails.
+           It works as follows:
+           1. Selects user enrollment details (`ue.id`, `u.email`, etc.) along with course section and course format options
+              (e.g., drip interval).
+           2. Filters for courses in the 'drip' format where the user's enrollment has a `timestart` value greater than 0
+              (active enrollment).
+           3. Uses the `FLOOR()` function to normalize the current timestamp and enrollment start time to whole days
+              (removing time-of-day discrepancies).
+           4. Compares the current timestamp minus one day ('yesterday', rounded down to the day) with the calculated drip
+              release time for each section, ensuring that a new section is unlocked at the correct interval, accounting
+              for the drip start section. We use 'yesterday' to account for timezone differences, making sure the email is sent
+              out at most 24 hours after each section has become available.
+           5. Ensures that emails are only sent for sections the user hasn’t yet received notifications for by checking the
+              `format_drip_email_log` table.
+         */
+        $sql = "SELECT
                 ue.id,
                 u.id AS userid,
                 u.email,
@@ -78,7 +98,7 @@ class send_drip_section_emails extends \core\task\scheduled_task {
                 c.id AS courseid,
                 ue.timestart AS enrolstart,
                 dripinterval.value AS dripinterval,
-                COALESCE(dripstart.value, :dripstart1) AS dripstart
+                COALESCE(CAST(dripstart.value AS $integer), :dripstart1) AS dripstart
             FROM
                 {user_enrolments} ue
             JOIN
@@ -98,7 +118,7 @@ class send_drip_section_emails extends \core\task\scheduled_task {
             WHERE
                 e.courseid IN (SELECT id FROM {course} WHERE format = 'drip')
             AND
-                cs.section >= COALESCE(dripstart.value, :dripstart2)
+                cs.section >= COALESCE(CAST(dripstart.value AS $integer), :dripstart2)
             AND
                 ue.status = :enrolstatus
             AND
@@ -106,15 +126,15 @@ class send_drip_section_emails extends \core\task\scheduled_task {
             AND
                 ue.timestart > 0
             AND
-                :currenttimestamp >= (ue.timestart + (dripinterval.value * cs.section * 86400))
+                FLOOR(:yesterday / 86400) >= FLOOR(ue.timestart / 86400) + (CAST(dripinterval.value AS $integer) *
+                (cs.section - (COALESCE(CAST(dripstart.value AS $integer), 2) - 1)))
             ORDER BY
-                u.id, cs.section ASC
-        ";
+                u.id, cs.section ASC";
 
-        // Execute the query with the current timestamp and enrolment status.
+        // Execute the query with the current timestamp minus one day and enrolment status.
         $recordset = $DB->get_recordset_sql($sql, [
             'enrolstatus' => ENROL_USER_ACTIVE,
-            'currenttimestamp' => $currenttimestamp,
+            'yesterday' => $yesterday,
             'dripstart1' => \format_drip::DRIP_START,
             'dripstart2' => \format_drip::DRIP_START,
         ]);
@@ -164,6 +184,36 @@ class send_drip_section_emails extends \core\task\scheduled_task {
             $this->mark_user_received_email($record->userid, $record->sectionid);
         }
         $recordset->close();
+    }
+
+    /**
+     * Returns the appropriate SQL casting type for the database in use.
+     *
+     * This function determines the correct SQL type for casting values to integers,
+     * ensuring compatibility across different database systems (e.g., MySQL, PostgreSQL, Oracle, MS SQL Server).
+     * Tested only with MySQL and PostgreSQL.
+     *
+     * Supported databases:
+     * - MySQL: Returns 'SIGNED'.
+     * - PostgreSQL: Returns 'INTEGER'.
+     * - Oracle: Returns 'NUMBER'.
+     * - MS SQL Server: Returns 'INT'.
+     *
+     * @return string The SQL casting type appropriate for the current database.
+     */
+    private static function get_cast_type() {
+        global $DB;
+
+        switch ($DB->get_dbfamily()) {
+            case 'postgres':
+                return 'INTEGER';
+            case 'oracle':
+                return 'NUMBER';
+            case 'mssql':
+                return 'INT';
+            default:
+                return 'SIGNED';  // MySQL and others.
+        }
     }
 
     /**
