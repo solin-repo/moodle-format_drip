@@ -119,6 +119,3 @@ $string['section_unhighlight_feedback'] = 'Highlighting removed from section {$a
 $string['sectionname'] = 'Section';
 $string['sectionname_form'] = 'Drip section {$a} days';
 $string['send_drip_section_emails'] = 'Send notifications for newly available drip course sections';
-$string['showfromothers'] = 'Show';
-$string['showhiddendripsections'] = 'Show unavailable drip sections';
-$string['showhiddendripsections_help'] = 'Whether to show the drip sections that are not available to the user yet. Users get to see when the drip section will open.';
