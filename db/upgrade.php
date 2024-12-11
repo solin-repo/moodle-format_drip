@@ -26,26 +26,37 @@
  */
 
 /**
- * Upgrade script for format_drip
+ * Upgrade script for format_drip.
  *
- * @param int $oldversion the version we are upgrading from
- * @return bool result
+ * @param int $oldversion The version we are upgrading from.
+ * @return bool True on success.
  */
 function xmldb_format_drip_upgrade($oldversion) {
     global $DB;
 
-    // Ensure this block is only run if the version is less than 2024081404.
+    $dbman = $DB->get_manager(); // Get the database manager.
+
     if ($oldversion < 2024081404) {
-        // Path to the install.xml file.
-        $file = __DIR__ . '/install.xml';
+        // Define table format_drip_email_log to be created.
+        $table = new xmldb_table('format_drip_email_log');
 
-        // Table name to create.
-        $tablename = 'format_drip_email_log';
+        // Define fields.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null);
+        // The ID of the user who received the email notification.
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null);
+        $table->add_field('sectionid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null);
 
-        // Create the new table using the install_one_table_from_xmldb_file function.
-        $DB->get_manager()->install_one_table_from_xmldb_file($file, $tablename);
+        // Define keys and indexes.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('userid_sectionid', XMLDB_INDEX_UNIQUE, ['userid', 'sectionid']);
 
-        // Mark the new version as the current savepoint.
+        // Conditionally launch table creation.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Update plugin savepoint.
         upgrade_plugin_savepoint(true, 2024081404, 'format', 'drip');
     }
 

@@ -4,7 +4,7 @@
         <TABLE NAME="format_drip_email_log" COMMENT="Log of sent emails for drip sections">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" COMMENT="Primary Key"/>
-                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="User ID"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Stores the ID of the user for whom the email notification was sent."/>
                 <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Course Section ID"/>
                 <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Timestamp of email sent"/>
             </FIELDS>

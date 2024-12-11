@@ -27,10 +27,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use format_drip\forms\drip_editsection_form;
-
 require_once($CFG->dirroot. '/course/format/lib.php');
-
 
 /**
  * Main class for the Drip course format.
@@ -546,9 +543,9 @@ class format_drip extends core_courseformat\base {
         try {
             $usertimezoneobj = new \DateTimeZone($usertimezone); // This is already an object.
         } catch (\Exception $e) {
-            $usertimezoneobj = new \DateTimeZone(core_date::get_server_timezone()); // Create an object from the server timezone string.
+            // Create an object from the server timezone string.
+            $usertimezoneobj = new \DateTimeZone(core_date::get_server_timezone());
         }
-
 
         $enrolstartdatetime = new \DateTime('@' . $enrolstart); // Create from Unix timestamp.
         $enrolstartdatetime->setTimezone($usertimezoneobj);
