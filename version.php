@@ -18,7 +18,7 @@
  * Version details
  *
  * @package   format_drip
- * @copyright 2020-2024 onwards Solin (https://solin.co)
+ * @copyright 2020-2025 onwards Solin (https://solin.co)
  * @author    Denis (denis@solin.co)
  * @author    Martijn (martijn@solin.nl)
  * @author    Onno (onno@solin.co)
@@ -27,7 +27,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2024090305;        // The current plugin version (Date: YYYYMMDDXX).
+$plugin->version   = 2025010600;        // The current plugin version (Date: YYYYMMDDXX).
 $plugin->requires  = 2024042201;        // Requires this Moodle version.
 $plugin->component = 'format_drip';    // Full name of the plugin (used for diagnostics).
 $plugin->name      = 'Drip Format by Solin';
